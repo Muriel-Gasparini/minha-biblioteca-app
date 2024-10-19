@@ -45,8 +45,10 @@ function RootLayoutNav() {
   return (
     <GluestackUIProvider mode={(colorScheme ?? "light") as "light" | "dark"}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false, animation: "ios" }}>
           <Stack.Screen name="index" />
+          <Stack.Screen name="home" />
+          <Stack.Screen name="register" />
         </Stack>
       </ThemeProvider>
     </GluestackUIProvider>
