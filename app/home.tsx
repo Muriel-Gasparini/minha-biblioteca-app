@@ -5,7 +5,7 @@ import { Text } from "@/components/ui/text";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonIcon } from "@/components/ui/button";
 import { Box } from "@/components/ui/box";
 import {
   SafeAreaView,
@@ -22,6 +22,7 @@ import { useAuth } from "@/app/context/auth";
 import CardMenu from "@/components/ui/card-menu";
 import EditBookModal from "@/components/ui/edit-book-modal";
 import CreateBookModal from "@/components/ui/create-book-modal";
+import { Heading } from "@/components/ui/heading";
 
 interface IBook {
   id: string;
@@ -104,7 +105,6 @@ const Home = () => {
 
   return (
     <SafeAreaView>
-      <StatusBar backgroundColor={"#0f172a"} />
       <LinearGradient
         className="flex-col w-full h-full"
         colors={["#111827", "#1e3a8a", "#111827"]}
@@ -112,20 +112,27 @@ const Home = () => {
         end={{ x: 1, y: 1 }}
       >
         <Box
-          style={{ marginTop: StatusBar.currentHeight }}
-          className="mb-6 w-full h-24 bg-gray-800/50 backdrop-blur-sm border-b border-blue-500 py-6 px-4 flex flex-row justify-between items-center"
+          style={{
+            paddingTop: StatusBar?.currentHeight
+              ? StatusBar.currentHeight + 20
+              : 0,
+          }}
+          className="mb-6 w-full bg-gray-800/50 backdrop-blur-sm border-b border-blue-500 py-6 px-4 flex flex-row justify-between items-center"
         >
           <HStack>
-            <Text className="text-3xl font-bold text-gray-100 ">
+            <Heading
+              className="whitespace-nowrap tracking-tight text-3xl font-bold text-gray-100"
+              size="3xl"
+            >
               Minha Biblioteca
-            </Text>
+            </Heading>
           </HStack>
           <HStack>
             <Button
               onPress={handleLogout}
               className="rounded-full data-[active=true]:bg-gray-500/80 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border border-white"
             >
-              <LogOut color="white" size={20} />
+              <ButtonIcon as={LogOut} className="text-white" size="xl" />
             </Button>
           </HStack>
         </Box>
@@ -149,7 +156,7 @@ const Home = () => {
         <VStack className="w-full flex-col items-center mb-6">
           {error && <Text className="text-red-500 mb-3">{error}</Text>}
           <ScrollView
-            style={{ height: "78.5%", width: "100%" }}
+            style={{ height: "80%", width: "100%" }}
             contentContainerStyle={{
               alignItems: "center",
               paddingBottom: 100,
