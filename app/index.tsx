@@ -9,48 +9,21 @@ import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
 import { Button } from "@/components/ui/button";
 import { router } from "expo-router";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "@/app/context/AuthContext";
 
 const index = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { login, error, isLoggedIn } = useAuth();
 
-  // Check for existing token on component mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem("access_token");
-      if (token) {
-        // If token exists, redirect to home
-        router.push("./home");
-      }
-    };
-    checkAuth();
-  }, []);
+    if (isLoggedIn) {
+      router.replace("./home");
+    }
+  }, [isLoggedIn]);
 
   const handleLogin = async () => {
-    try {
-      const response = await axios.post("http://192.168.1.23:3000/auth/login", {
-        email,
-        senha: password,
-      });
-
-      console.log("Login bem-sucedido:", response.data);
-      // Store the access token in AsyncStorage
-      await AsyncStorage.setItem("access_token", response.data.access_token);
-      // Redirect to home
-      router.push("./home");
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        setError(
-          error.response.data.message ||
-            "Login falhou. Por favor, tente novamente."
-        );
-      } else {
-        setError("Erro desconhecido. Por favor, tente novamente.");
-      }
-    }
+    await login(email, password);
   };
 
   return (

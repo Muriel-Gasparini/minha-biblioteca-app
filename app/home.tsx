@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Heading } from "@/components/ui/heading";
 import { LinearGradient } from "@/components/ui/linear-gradient";
@@ -6,7 +6,7 @@ import { Text } from "@/components/ui/text";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
-import { Button, ButtonText } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { router } from "expo-router";
 import { Box } from "@/components/ui/box";
 import { SafeAreaView, StatusBar } from "react-native";
@@ -26,7 +26,6 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalFooter,
   ModalHeader,
 } from "@/components/ui/modal";
 import {
@@ -36,8 +35,33 @@ import {
   RadioIndicator,
   RadioLabel,
 } from "@/components/ui/radio";
+import axiosInstance from "@/app/utils/axiosInstance";
+import { useAuth } from "@/app/context/AuthContext";
 
 const Home = () => {
+  const { logout } = useAuth();
+  const [books, setBooks] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await axiosInstance.get("/livros");
+        setBooks(response.data);
+      } catch (error) {
+        setError("Erro ao buscar livros. Tente novamente.");
+        console.error(error);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("./");
+  };
+
   return (
     <SafeAreaView style={{ marginTop: StatusBar.currentHeight }}>
       <LinearGradient
@@ -52,14 +76,14 @@ const Home = () => {
               Minha Biblioteca
             </Text>
           </HStack>
-          <VStack>
+          <HStack>
             <Button
-              onPress={() => router.push("./")}
+              onPress={handleLogout}
               className="border text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500"
             >
               <LogOut color="white" size={20} />
             </Button>
-          </VStack>
+          </HStack>
         </Box>
         <VStack className="w-full flex-col items-center mb-6  ">
           <Input
@@ -80,43 +104,46 @@ const Home = () => {
           </Input>
         </VStack>
         <VStack className="w-full flex-col items-center mb-6 ">
-          <Card className="w-11/12 p-6 rounded-lg border text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500">
-            <HStack className="justify-between align-items-center mb-4">
-              <Book color="#3b82f6" size={50} />
-              <Badge
-                action="success"
-                variant="solid"
-                className="text-center px-4 whitespace-nowrap rounded-full border border-white h-8 font-semibold bg-green-600 text-white"
+          {error && <Text className="text-red-500">{error}</Text>}
+          {books.length > 0 ? (
+            books.map((book) => (
+              <Card
+                key={book.id}
+                className="w-11/12 p-6 rounded-lg border text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500 mb-4"
               >
-                <Text className="text-gray-100 text-sm text-center">Lido</Text>
-              </Badge>
-            </HStack>
-            <Text className="text-xl font-semibold text-gray-100 mb-2">
-              To Kill a Mockingbird
-            </Text>
-            <Text className="text-sm text-gray-300 mb-1">Harper Lee</Text>
-            <Text className="text-xs text-gray-400">1960</Text>
-          </Card>
-
-          <Card className="mt-6 w-11/12 p-6 rounded-lg border text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500">
-            <HStack className="justify-between align-items-center mb-4">
-              <Book color={"#3b82f6"} size={50} />
-              <Badge
-                action="error"
-                variant="solid"
-                className="text-center px-4 whitespace-nowrap rounded-full border border-white h-8 font-semibold bg-red-600 text-white"
-              >
-                <Text className="text-gray-100 text-sm text-center">
-                  Não Lido
+                <HStack className="justify-between align-items-center mb-4">
+                  <Book color="#3b82f6" size={50} />
+                  <Badge
+                    action={book.statusLeitura === "lido" ? "success" : "error"}
+                    variant="solid"
+                    className={`text-center px-4 whitespace-nowrap rounded-full border border-white h-8 font-semibold ${
+                      book.statusLeitura === "lido"
+                        ? "bg-green-600"
+                        : "bg-red-600"
+                    } text-white`}
+                  >
+                    <Text className="text-gray-100 text-sm text-center">
+                      {book.statusLeitura === "lido" ? "Lido" : "Não Lido"}
+                    </Text>
+                  </Badge>
+                </HStack>
+                <Text className="text-xl font-semibold text-gray-100 mb-2">
+                  {book.titulo}
                 </Text>
-              </Badge>
-            </HStack>
-            <Text className="text-xl font-semibold text-gray-100 mb-2">
-              Pride and Prejudice
-            </Text>
-            <Text className="text-sm text-gray-300 mb-1">Jane Austen</Text>
-            <Text className="text-xs text-gray-400">1813</Text>
-          </Card>
+                <Text className="text-sm text-gray-300 mb-1">{book.autor}</Text>
+                <HStack className="justify-between">
+                  <Text className="text-xs text-gray-400 mb-1">
+                    {book.genero}
+                  </Text>
+                  <Text className="text-xs text-gray-400 mb-1">
+                    {book.anoPublicacao}
+                  </Text>
+                </HStack>
+              </Card>
+            ))
+          ) : (
+            <Text className="text-gray-400">Nenhum livro encontrado.</Text>
+          )}
         </VStack>
         <Fab
           size="md"
@@ -128,7 +155,7 @@ const Home = () => {
         </Fab>
       </LinearGradient>
 
-      <Modal isOpen size="md">
+      <Modal size="md">
         <ModalBackdrop />
         <ModalContent className="w-11/12 border p-6 shadow-lg bg-gray-900/90 backdrop-blur-sm border-blue-500">
           <ModalHeader>
@@ -212,7 +239,7 @@ const Home = () => {
                     <RadioLabel className="text-sm">Lido</RadioLabel>
                   </Radio>
                   <Radio
-                    value="change"
+                    value="not-read"
                     size="md"
                     isInvalid={false}
                     isDisabled={false}
@@ -220,15 +247,10 @@ const Home = () => {
                     <RadioIndicator>
                       <RadioIcon as={CircleIcon} />
                     </RadioIndicator>
-                    <RadioLabel className="text-sm">Não lido</RadioLabel>
+                    <RadioLabel className="text-sm">Não Lido</RadioLabel>
                   </Radio>
                 </RadioGroup>
               </VStack>
-              <Button className="w-11/12 mt-8 bg-blue-600 rounded-md" size="lg">
-                <Text className="text-white" bold>
-                  Adicionar Livro
-                </Text>
-              </Button>
             </VStack>
           </ModalBody>
         </ModalContent>

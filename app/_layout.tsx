@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { useColorScheme } from "@/components/useColorScheme";
 import "../global.css";
+import { AuthProvider, useAuth } from "@/app/context/AuthContext";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -36,19 +37,29 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
 
 function RootLayoutNav() {
+  const { isLoggedIn } = useAuth(); // Use the auth context
   const colorScheme = useColorScheme();
 
   return (
     <GluestackUIProvider mode={(colorScheme ?? "light") as "light" | "dark"}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false, animation: "ios" }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="home" />
-          <Stack.Screen name="register" />
+          {isLoggedIn ? (
+            <>
+              <Stack.Screen name="home" />
+              <Stack.Screen name="register" />
+            </>
+          ) : (
+            <Stack.Screen name="index" />
+          )}
         </Stack>
       </ThemeProvider>
     </GluestackUIProvider>
