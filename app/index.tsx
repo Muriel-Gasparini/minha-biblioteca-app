@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "@/components/ui/safe-area-view";
 import { Card } from "@/components/ui/card";
 import { Heading } from "@/components/ui/heading";
@@ -9,7 +9,50 @@ import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
 import { Button } from "@/components/ui/button";
 import { router } from "expo-router";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const index = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  // Check for existing token on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem("access_token");
+      if (token) {
+        // If token exists, redirect to home
+        router.push("./home");
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post("http://192.168.1.23:3000/auth/login", {
+        email,
+        senha: password,
+      });
+
+      console.log("Login bem-sucedido:", response.data);
+      // Store the access token in AsyncStorage
+      await AsyncStorage.setItem("access_token", response.data.access_token);
+      // Redirect to home
+      router.push("./home");
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        setError(
+          error.response.data.message ||
+            "Login falhou. Por favor, tente novamente."
+        );
+      } else {
+        setError("Erro desconhecido. Por favor, tente novamente.");
+      }
+    }
+  };
+
   return (
     <SafeAreaView>
       <LinearGradient
@@ -18,12 +61,6 @@ const index = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        {/* <LinearGradient
-          className="w-11/12 h-2/3 border border-blue-500  drop-shadow-2xl blur-sm"
-          colors={["#192f6a", "#1f3982", "#1e3a8a"]}
-          end={{ x: 0, y: 0 }}
-          start={{ x: 1, y: 1 }}
-        > */}
         <Card className="w-10/11 h-1/2 flex-col items-center rounded-lg border text-card-foreground w-full max-w-md shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500">
           <VStack space="xs" className="w-11/12 mt-3">
             <Heading
@@ -50,6 +87,8 @@ const index = () => {
                   cursorColor={"#3b82f6"}
                   placeholder="email@exemplo.com"
                   placeholderTextColor={"#4b5563"}
+                  value={email}
+                  onChangeText={setEmail}
                 />
               </Input>
             </VStack>
@@ -61,17 +100,20 @@ const index = () => {
                 size="lg"
                 className="flex h-10 rounded-md border text-sm placeholder:text-muted-foreground w-full bg-gray-700 border-blue-500 text-gray-100"
               >
-                <InputField size="lg" type="password" cursorColor={"#3b82f6"} />
+                <InputField
+                  size="lg"
+                  type="password"
+                  cursorColor={"#3b82f6"}
+                  value={password}
+                  onChangeText={setPassword}
+                />
               </Input>
             </VStack>
+            {error && <Text className="text-red-500">{error}</Text>}
             <Button
               className="w-11/12 mt-8 bg-blue-600 rounded-md"
               size="lg"
-              onPress={() =>
-                router.push({
-                  pathname: "./home",
-                })
-              }
+              onPress={handleLogin}
             >
               <Text className="text-white" bold>
                 Entrar
