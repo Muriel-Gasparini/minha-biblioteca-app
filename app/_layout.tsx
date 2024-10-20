@@ -1,21 +1,11 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { useColorScheme } from "@/components/useColorScheme";
 import "../global.css";
-import { AuthProvider, useAuth } from "@/app/context/AuthContext";
-
-export { ErrorBoundary } from "expo-router";
-
-SplashScreen.preventAutoHideAsync();
+import { AuthProvider, useAuth } from "@/app/context/auth";
+import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -26,12 +16,6 @@ export default function RootLayout() {
   useEffect(() => {
     if (error) throw error;
   }, [error]);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
 
   if (!loaded) {
     return null;
@@ -45,21 +29,18 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { isLoggedIn } = useAuth(); // Use the auth context
-  const colorScheme = useColorScheme();
-
+  const { isLoggedIn } = useAuth();
   return (
-    <GluestackUIProvider mode={(colorScheme ?? "light") as "light" | "dark"}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false, animation: "ios" }}>
-          {isLoggedIn ? (
-            <>
-              <Stack.Screen name="home" />
-              <Stack.Screen name="register" />
-            </>
-          ) : (
-            <Stack.Screen name="index" />
-          )}
+    <GluestackUIProvider mode={"dark"}>
+      <ThemeProvider value={DarkTheme}>
+        <Stack
+          initialRouteName="splash"
+          screenOptions={{ headerShown: false, animation: "fade_from_bottom" }}
+        >
+          <Stack.Screen name="splash" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          {isLoggedIn && <Stack.Screen name="home" />}
         </Stack>
       </ThemeProvider>
     </GluestackUIProvider>

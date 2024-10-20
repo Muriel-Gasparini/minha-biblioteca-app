@@ -32,10 +32,9 @@ const Register = () => {
       });
 
       console.log("Registro bem-sucedido:", response.data);
-      router.push("./");
+      router.push("./login");
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        // Check for specific error messages
         if (error.response.status === 400) {
           const messages = error.response.data.message;
           setError(
@@ -147,7 +146,7 @@ const Register = () => {
             </VStack>
             {error && <Text className="text-red-500">{error}</Text>}
             <Button
-              className="w-11/12 mt-5 bg-blue-600 rounded-md"
+              className="w-11/12 mt-5 bg-blue-600 data-[active=true]:bg-blue-600/80 rounded-md"
               size="lg"
               onPress={handleRegister}
             >
@@ -163,7 +162,7 @@ const Register = () => {
               className="text-blue-400 hover:text-blue-300"
               onPress={() =>
                 router.push({
-                  pathname: "./",
+                  pathname: "./login",
                 })
               }
             >

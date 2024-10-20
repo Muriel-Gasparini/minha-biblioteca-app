@@ -1,76 +1,120 @@
 import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Heading } from "@/components/ui/heading";
 import { LinearGradient } from "@/components/ui/linear-gradient";
 import { Text } from "@/components/ui/text";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
 import { Button } from "@/components/ui/button";
-import { router } from "expo-router";
 import { Box } from "@/components/ui/box";
-import { SafeAreaView, StatusBar } from "react-native";
 import {
-  AddIcon,
-  CircleIcon,
-  CloseIcon,
-  Icon,
-  SearchIcon,
-} from "@/components/ui/icon";
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
+import { AddIcon, SearchIcon } from "@/components/ui/icon";
 import { Book, LogOut } from "lucide-react-native";
 import { Badge } from "@/components/ui/badge";
 import { Fab, FabIcon, FabLabel } from "@/components/ui/fab";
-import {
-  Modal,
-  ModalBackdrop,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-} from "@/components/ui/modal";
-import {
-  Radio,
-  RadioGroup,
-  RadioIcon,
-  RadioIndicator,
-  RadioLabel,
-} from "@/components/ui/radio";
-import axiosInstance from "@/app/utils/axiosInstance";
-import { useAuth } from "@/app/context/AuthContext";
+import axiosInstance from "@/app/utils/axios-instance";
+import { useAuth } from "@/app/context/auth";
+import CardMenu from "@/components/ui/card-menu";
+import EditBookModal from "@/components/ui/edit-book-modal";
+import CreateBookModal from "@/components/ui/create-book-modal";
+
+interface IBook {
+  id: string;
+  titulo: string;
+  autor: string;
+  genero: string;
+  anoPublicacao: string;
+  statusLeitura: "lido" | "nao lido";
+  usuario: string;
+}
 
 const Home = () => {
   const { logout } = useAuth();
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState<IBook[]>([]);
   const [error, setError] = useState("");
+  const [selectedBook, setSelectedBook] = useState<IBook | null>(null);
+  const [isEditModalVisible, setEditModalVisible] = useState(false);
+  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchBooks = async () => {
+    try {
+      setError("");
+      setRefreshing(true);
+      const response = await axiosInstance.get("/livros");
+      setBooks(response.data);
+    } catch (error) {
+      setError("Erro ao buscar livros. Tente novamente.");
+      console.error(error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    await fetchBooks();
+  };
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const response = await axiosInstance.get("/livros");
-        setBooks(response.data);
-      } catch (error) {
-        setError("Erro ao buscar livros. Tente novamente.");
-        console.error(error);
-      }
-    };
-
     fetchBooks();
   }, []);
 
   const handleLogout = async () => {
     await logout();
-    router.replace("./");
+  };
+
+  const handleEdit = (book: IBook) => {
+    setSelectedBook(book);
+    setEditModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setEditModalVisible(false);
+    setSelectedBook(null);
+  };
+
+  const handleSaveEdit = async (updatedBook: IBook) => {
+    try {
+      const { id, usuario, ...bookToUpdate } = updatedBook;
+      await axiosInstance.patch(`/livros/${id}`, bookToUpdate);
+      await fetchBooks();
+      setEditModalVisible(false);
+      setSelectedBook(null);
+    } catch (error) {
+      setError("Erro ao atualizar livro. Tente novamente.");
+      console.error(error);
+    }
+  };
+
+  const handleCreateBook = async (newBook: Omit<IBook, "id" | "usuario">) => {
+    try {
+      await axiosInstance.post("/livros", newBook);
+      await fetchBooks();
+      setCreateModalVisible(false);
+    } catch (error) {
+      setError("Erro ao criar livro. Tente novamente.");
+      console.error(error);
+    }
   };
 
   return (
-    <SafeAreaView style={{ marginTop: StatusBar.currentHeight }}>
+    <SafeAreaView>
+      <StatusBar backgroundColor={"#0f172a"} />
       <LinearGradient
         className="flex-col w-full h-full"
         colors={["#111827", "#1e3a8a", "#111827"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Box className="mb-6 w-full h-24 bg-gray-800/50 backdrop-blur-sm border-b border-blue-500 py-6 px-4 flex flex-row justify-between items-center">
+        <Box
+          style={{ marginTop: StatusBar.currentHeight }}
+          className="mb-6 w-full h-24 bg-gray-800/50 backdrop-blur-sm border-b border-blue-500 py-6 px-4 flex flex-row justify-between items-center"
+        >
           <HStack>
             <Text className="text-3xl font-bold text-gray-100 ">
               Minha Biblioteca
@@ -79,21 +123,20 @@ const Home = () => {
           <HStack>
             <Button
               onPress={handleLogout}
-              className="border text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500"
+              className="rounded-full data-[active=true]:bg-gray-500/80 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border border-white"
             >
               <LogOut color="white" size={20} />
             </Button>
           </HStack>
         </Box>
-        <VStack className="w-full flex-col items-center mb-6  ">
+        <VStack className="w-full justify-center flex-row items-center flex-col mb-6">
           <Input
             size="lg"
-            className="p-1 h-12 flex w-11/12  rounded-md border text-sm placeholder:text-muted-foreground bg-gray-700 border-blue-500 text-gray-100"
+            className="p-1 h-12 flex w-11/12 rounded-md border text-sm placeholder:text-muted-foreground bg-gray-700 border-blue-500 text-gray-100"
           >
             <InputSlot>
               <InputIcon className="ml-2" as={SearchIcon} />
             </InputSlot>
-
             <InputField
               size="lg"
               type="text"
@@ -103,158 +146,101 @@ const Home = () => {
             />
           </Input>
         </VStack>
-        <VStack className="w-full flex-col items-center mb-6 ">
-          {error && <Text className="text-red-500">{error}</Text>}
-          {books.length > 0 ? (
-            books.map((book) => (
-              <Card
-                key={book.id}
-                className="w-11/12 p-6 rounded-lg border text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500 mb-4"
-              >
-                <HStack className="justify-between align-items-center mb-4">
-                  <Book color="#3b82f6" size={50} />
-                  <Badge
-                    action={book.statusLeitura === "lido" ? "success" : "error"}
-                    variant="solid"
-                    className={`text-center px-4 whitespace-nowrap rounded-full border border-white h-8 font-semibold ${
-                      book.statusLeitura === "lido"
-                        ? "bg-green-600"
-                        : "bg-red-600"
-                    } text-white`}
+        <VStack className="w-full flex-col items-center mb-6">
+          {error && <Text className="text-red-500 mb-3">{error}</Text>}
+          <ScrollView
+            style={{ height: "78.5%", width: "100%" }}
+            contentContainerStyle={{
+              alignItems: "center",
+              paddingBottom: 100,
+              paddingTop: 10,
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                colors={["#2563eb"]}
+                onRefresh={onRefresh}
+              />
+            }
+          >
+            {books.length > 0
+              ? books.map((book) => (
+                  <Card
+                    key={book.id}
+                    className="w-11/12 p-6 rounded-lg border text-card-foreground shadow-sm hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500 mb-4"
                   >
-                    <Text className="text-gray-100 text-sm text-center">
-                      {book.statusLeitura === "lido" ? "Lido" : "Não Lido"}
+                    <HStack className="justify-between align-items-center mb-4">
+                      <Book color="#3b82f6" size={50} />
+                      <CardMenu
+                        onEdit={() => handleEdit(book)}
+                        onDelete={() => console.log("Delete", book.id)}
+                      />
+                    </HStack>
+                    <Text className="text-xl font-semibold text-gray-100 mb-2">
+                      {book.titulo}
                     </Text>
-                  </Badge>
-                </HStack>
-                <Text className="text-xl font-semibold text-gray-100 mb-2">
-                  {book.titulo}
-                </Text>
-                <Text className="text-sm text-gray-300 mb-1">{book.autor}</Text>
-                <HStack className="justify-between">
-                  <Text className="text-xs text-gray-400 mb-1">
-                    {book.genero}
+                    <Text className="text-sm text-gray-300 mb-1">
+                      {book.autor}
+                    </Text>
+                    <HStack className="justify-between">
+                      <Text className="text-xs text-gray-400 mb-1">
+                        {book.genero} - {book.anoPublicacao}
+                      </Text>
+                      <Badge
+                        className={`text-center px-4 whitespace-nowrap rounded-full border-none drop-shadow-lg h-9 font-semibold ${
+                          book.statusLeitura === "lido"
+                            ? "bg-green-600"
+                            : "bg-red-600"
+                        } text-white`}
+                      >
+                        <Text className="text-gray-100 text-sm text-center">
+                          {book.statusLeitura === "lido" ? "Lido" : "Não Lido"}
+                        </Text>
+                      </Badge>
+                    </HStack>
+                  </Card>
+                ))
+              : !refreshing && (
+                  <Text className="text-gray-400">
+                    Nenhum livro encontrado.
                   </Text>
-                  <Text className="text-xs text-gray-400 mb-1">
-                    {book.anoPublicacao}
-                  </Text>
-                </HStack>
-              </Card>
-            ))
-          ) : (
-            <Text className="text-gray-400">Nenhum livro encontrado.</Text>
-          )}
+                )}
+          </ScrollView>
+          <LinearGradient
+            colors={["transparent", "#111827"]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 100,
+              zIndex: 1,
+            }}
+          />
         </VStack>
         <Fab
-          size="md"
-          className="border hover:bg-blue-700 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border-blue-500"
+          size="lg"
+          className="active:bg-blue-600/80 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-blue-600 backdrop-blur-sm border-none"
           placement="bottom right"
+          onPress={() => setCreateModalVisible(true)}
         >
           <FabIcon as={AddIcon} className="text-gray-100" />
           <FabLabel className="text-gray-100">Novo Livro</FabLabel>
         </Fab>
-      </LinearGradient>
 
-      <Modal size="md">
-        <ModalBackdrop />
-        <ModalContent className="w-11/12 border p-6 shadow-lg bg-gray-900/90 backdrop-blur-sm border-blue-500">
-          <ModalHeader>
-            <VStack>
-              <Heading size="md" className="text-typography-950">
-                Adicionar Novo Livro
-              </Heading>
-              <Text className="text-sm text-gray-400">
-                Informe os detalhes do novo livro
-              </Text>
-            </VStack>
-            <ModalCloseButton>
-              <Icon
-                as={CloseIcon}
-                size="md"
-                className="stroke-background-400 group-[:hover]/modal-close-button:stroke-background-700 group-[:active]/modal-close-button:stroke-background-900 group-[:focus-visible]/modal-close-button:stroke-background-900"
-              />
-            </ModalCloseButton>
-          </ModalHeader>
-          <ModalBody>
-            <VStack className="w-full h-full items-center">
-              <VStack space="xs" className="w-11/12 mb-4">
-                <Text className="text-sm font-medium leading-none text-gray-100">
-                  Titulo
-                </Text>
-                <Input
-                  size="lg"
-                  className="flex h-10 rounded-md border text-sm placeholder:text-muted-foreground w-full bg-gray-700 border-blue-500 text-gray-100"
-                >
-                  <InputField
-                    type="text"
-                    cursorColor={"#3b82f6"}
-                    placeholderTextColor={"#4b5563"}
-                  />
-                </Input>
-              </VStack>
-              <VStack space="xs" className="w-11/12 mb-4">
-                <Text className="text-sm font-medium leading-none text-gray-100">
-                  Autor
-                </Text>
-                <Input
-                  size="lg"
-                  className="flex h-10 rounded-md border text-sm placeholder:text-muted-foreground w-full bg-gray-700 border-blue-500 text-gray-100"
-                >
-                  <InputField
-                    type="text"
-                    cursorColor={"#3b82f6"}
-                    placeholderTextColor={"#4b5563"}
-                  />
-                </Input>
-              </VStack>
-              <VStack space="xs" className="w-11/12 mb-4">
-                <Text className="text-sm font-medium leading-none text-gray-100">
-                  Ano da Publicação
-                </Text>
-                <Input
-                  size="lg"
-                  className="flex h-10 rounded-md border text-sm placeholder:text-muted-foreground w-full bg-gray-700 border-blue-500 text-gray-100"
-                >
-                  <InputField
-                    type="text"
-                    cursorColor={"#3b82f6"}
-                    placeholderTextColor={"#4b5563"}
-                  />
-                </Input>
-              </VStack>
-              <VStack className="w-11/12 justify-start">
-                <Text className="text-sm font-medium leading-none text-gray-100 mb-2">
-                  Status da leitura
-                </Text>
-                <RadioGroup>
-                  <Radio
-                    value="change"
-                    size="md"
-                    isInvalid={false}
-                    isDisabled={false}
-                  >
-                    <RadioIndicator>
-                      <RadioIcon as={CircleIcon} />
-                    </RadioIndicator>
-                    <RadioLabel className="text-sm">Lido</RadioLabel>
-                  </Radio>
-                  <Radio
-                    value="not-read"
-                    size="md"
-                    isInvalid={false}
-                    isDisabled={false}
-                  >
-                    <RadioIndicator>
-                      <RadioIcon as={CircleIcon} />
-                    </RadioIndicator>
-                    <RadioLabel className="text-sm">Não Lido</RadioLabel>
-                  </Radio>
-                </RadioGroup>
-              </VStack>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+        <EditBookModal
+          onSave={handleSaveEdit}
+          isOpen={!!selectedBook}
+          onClose={handleCloseModal}
+          book={selectedBook}
+        />
+
+        <CreateBookModal
+          onSave={handleCreateBook}
+          isOpen={isCreateModalVisible}
+          onClose={() => setCreateModalVisible(false)}
+        />
+      </LinearGradient>
     </SafeAreaView>
   );
 };

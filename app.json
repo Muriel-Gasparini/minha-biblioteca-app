@@ -1,28 +1,23 @@
 {
   "expo": {
-    "name": "expo-app",
-    "slug": "expo-app",
+    "name": "MinhaBiblioteca",
+    "slug": "MinhaBiblioteca",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "minhabiblioteca",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gluestack.expoapp"
+      "bundleIdentifier": "com.minha.biblioteca"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.gluestack.expoapp",
+      "package": "com.minha.biblioteca",
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
@@ -37,6 +32,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "2548a6cd-6cd0-412e-b634-77a6b9152a4b"
       }
     }
   }
