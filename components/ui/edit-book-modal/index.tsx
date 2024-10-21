@@ -21,12 +21,28 @@ import {
 } from "../radio";
 import { CircleIcon } from "lucide-react-native";
 
-const EditBookModal = ({ isOpen, onClose, book, onSave }) => {
+interface EditBookModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  book: {
+    titulo?: string;
+    autor?: string;
+    anoPublicacao?: number;
+    genero?: string;
+    statusLeitura?: "LIDO" | "NAO_LIDO";
+  };
+  onSave: (book: any) => void;
+}
+
+const EditBookModal: React.FC<EditBookModalProps> = ({
+  isOpen,
+  onClose,
+  book,
+  onSave,
+}) => {
   const [titulo, setTitulo] = useState(book?.titulo);
   const [autor, setAutor] = useState(book?.autor);
-  const [anoPublicacao, setAnoPublicacao] = useState(
-    book?.anoPublicacao.toString()
-  );
+  const [anoPublicacao, setAnoPublicacao] = useState(book?.anoPublicacao);
   const [genero, setGenero] = useState(book?.genero);
   const [statusLeitura, setStatusLeitura] = useState(book?.statusLeitura);
 
@@ -35,7 +51,7 @@ const EditBookModal = ({ isOpen, onClose, book, onSave }) => {
       ...book,
       titulo,
       autor,
-      anoPublicacao: parseInt(anoPublicacao, 10),
+      anoPublicacao,
       genero,
       statusLeitura,
     };
@@ -46,7 +62,7 @@ const EditBookModal = ({ isOpen, onClose, book, onSave }) => {
   useEffect(() => {
     setTitulo(book?.titulo);
     setAutor(book?.autor);
-    setAnoPublicacao(book?.anoPublicacao.toString());
+    setAnoPublicacao(book?.anoPublicacao);
     setGenero(book?.genero);
     setStatusLeitura(book?.statusLeitura);
   }, [book]);
@@ -112,8 +128,10 @@ const EditBookModal = ({ isOpen, onClose, book, onSave }) => {
               >
                 <InputField
                   type="text"
-                  value={anoPublicacao}
-                  onChangeText={setAnoPublicacao}
+                  value={anoPublicacao?.toString()}
+                  onChangeText={(text) =>
+                    setAnoPublicacao(text ? parseInt(text) : undefined)
+                  }
                   cursorColor={"#3b82f6"}
                   placeholderTextColor={"#4b5563"}
                 />
@@ -141,13 +159,13 @@ const EditBookModal = ({ isOpen, onClose, book, onSave }) => {
                 Status da Leitura
               </Text>
               <RadioGroup value={statusLeitura} onChange={setStatusLeitura}>
-                <Radio value="lido" size="md">
+                <Radio value="LIDO" size="md">
                   <RadioIndicator>
                     <RadioIcon as={CircleIcon} />
                   </RadioIndicator>
                   <RadioLabel>Lido</RadioLabel>
                 </Radio>
-                <Radio value="nao lido" size="md">
+                <Radio value="NAO_LIDO" size="md">
                   <RadioIndicator>
                     <RadioIcon as={CircleIcon} />
                   </RadioIndicator>

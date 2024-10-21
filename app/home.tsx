@@ -23,6 +23,7 @@ import CardMenu from "@/components/ui/card-menu";
 import EditBookModal from "@/components/ui/edit-book-modal";
 import CreateBookModal from "@/components/ui/create-book-modal";
 import { Heading } from "@/components/ui/heading";
+import { FieldValues } from "react-hook-form";
 
 interface IBook {
   id: string;
@@ -30,7 +31,7 @@ interface IBook {
   autor: string;
   genero: string;
   anoPublicacao: string;
-  statusLeitura: "lido" | "nao lido";
+  statusLeitura: "LIDO" | "NAO_LIDO";
   usuario: string;
 }
 
@@ -92,7 +93,7 @@ const Home = () => {
     }
   };
 
-  const handleCreateBook = async (newBook: Omit<IBook, "id" | "usuario">) => {
+  const handleCreateBook = async (newBook: FieldValues) => {
     try {
       await axiosInstance.post("/livros", newBook);
       await fetchBooks();
@@ -195,13 +196,13 @@ const Home = () => {
                       </Text>
                       <Badge
                         className={`text-center px-4 whitespace-nowrap rounded-full border-none drop-shadow-lg h-9 font-semibold ${
-                          book.statusLeitura === "lido"
+                          book.statusLeitura === "LIDO"
                             ? "bg-green-600"
                             : "bg-red-600"
                         } text-white`}
                       >
                         <Text className="text-gray-100 text-sm text-center">
-                          {book.statusLeitura === "lido" ? "Lido" : "Não Lido"}
+                          {book.statusLeitura === "LIDO" ? "Lido" : "Não Lido"}
                         </Text>
                       </Badge>
                     </HStack>

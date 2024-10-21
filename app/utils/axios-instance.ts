@@ -11,16 +11,39 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("Request:", {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data,
+    });
     return config;
   },
   (error) => {
+    console.error("Request Error:", error);
     return Promise.reject(error);
   }
 );
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("Response:", {
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+    });
+    return response;
+  },
   async (error) => {
+    if (error.response) {
+      console.error("Response Error:", {
+        url: error.response.config.url,
+        status: error.response.status,
+        data: error.response.data,
+      });
+    } else {
+      console.error("Network Error:", error.message);
+    }
     return Promise.reject(error);
   }
 );
