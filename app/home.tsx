@@ -1,31 +1,32 @@
-import React, { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { LinearGradient } from "@/components/ui/linear-gradient";
-import { Text } from "@/components/ui/text";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
-import { VStack } from "@/components/ui/vstack";
-import { HStack } from "@/components/ui/hstack";
-import { Button, ButtonIcon } from "@/components/ui/button";
-import { Box } from "@/components/ui/box";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   SafeAreaView,
   StatusBar,
   ScrollView,
   RefreshControl,
 } from "react-native";
-import { AddIcon, SearchIcon } from "@/components/ui/icon";
 import { Book, LogOut } from "lucide-react-native";
-import { Badge } from "@/components/ui/badge";
-import { Fab, FabIcon, FabLabel } from "@/components/ui/fab";
-import axiosInstance from "@/app/utils/axios-instance";
+
+import debounce from "./utils/debounce";
+import { Box } from "@/components/ui/box";
+import { Text } from "@/components/ui/text";
+import { Card } from "@/components/ui/card";
 import { useAuth } from "@/app/context/auth";
+import { Badge } from "@/components/ui/badge";
+import { VStack } from "@/components/ui/vstack";
+import { HStack } from "@/components/ui/hstack";
 import CardMenu from "@/components/ui/card-menu";
+import { Heading } from "@/components/ui/heading";
+import axiosInstance from "@/app/utils/axios-instance";
+import { AddIcon, SearchIcon } from "@/components/ui/icon";
+import { Button, ButtonIcon } from "@/components/ui/button";
 import EditBookModal from "@/components/ui/edit-book-modal";
 import CreateBookModal from "@/components/ui/create-book-modal";
-import { Heading } from "@/components/ui/heading";
-import { FieldValues } from "react-hook-form";
+import { LinearGradient } from "@/components/ui/linear-gradient";
+import ConfirmationModal from "@/components/ui/confirmation-modal";
+import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 
-interface IBook {
+export interface IBook {
   id: string;
   titulo: string;
   autor: string;
@@ -40,15 +41,24 @@ const Home = () => {
   const [books, setBooks] = useState<IBook[]>([]);
   const [error, setError] = useState("");
   const [selectedBook, setSelectedBook] = useState<IBook | null>(null);
-  const [isEditModalVisible, setEditModalVisible] = useState(false);
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [bookToDelete, setBookToDelete] = useState<IBook | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const fetchBooks = async () => {
+  const handleSearch = useCallback(
+    debounce((query: string) => {
+      setSearchQuery(query);
+    }, 500),
+    []
+  );
+
+  const fetchBooks = async (search = "") => {
     try {
       setError("");
       setRefreshing(true);
-      const response = await axiosInstance.get("/livros");
+      const response = await axiosInstance.get(`/livros?search=${search}`);
       setBooks(response.data);
     } catch (error) {
       setError("Erro ao buscar livros. Tente novamente.");
@@ -59,12 +69,8 @@ const Home = () => {
   };
 
   const onRefresh = async () => {
-    await fetchBooks();
+    await fetchBooks(searchQuery);
   };
-
-  useEffect(() => {
-    fetchBooks();
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -72,37 +78,34 @@ const Home = () => {
 
   const handleEdit = (book: IBook) => {
     setSelectedBook(book);
-    setEditModalVisible(true);
   };
 
   const handleCloseModal = () => {
-    setEditModalVisible(false);
     setSelectedBook(null);
   };
 
-  const handleSaveEdit = async (updatedBook: IBook) => {
+  const handleDelete = (book: IBook) => {
+    setBookToDelete(book);
+  };
+
+  const confirmDelete = async () => {
+    if (!bookToDelete) return;
+    setDeleteLoading(true);
     try {
-      const { id, usuario, ...bookToUpdate } = updatedBook;
-      await axiosInstance.patch(`/livros/${id}`, bookToUpdate);
-      await fetchBooks();
-      setEditModalVisible(false);
-      setSelectedBook(null);
+      await axiosInstance.delete(`/livros/${bookToDelete.id}`);
+      setBookToDelete(null);
+      await fetchBooks(searchQuery);
     } catch (error) {
-      setError("Erro ao atualizar livro. Tente novamente.");
+      setError("Erro ao excluir livro. Tente novamente.");
       console.error(error);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const handleCreateBook = async (newBook: FieldValues) => {
-    try {
-      await axiosInstance.post("/livros", newBook);
-      await fetchBooks();
-      setCreateModalVisible(false);
-    } catch (error) {
-      setError("Erro ao criar livro. Tente novamente.");
-      console.error(error);
-    }
-  };
+  useEffect(() => {
+    fetchBooks(searchQuery);
+  }, [searchQuery]);
 
   return (
     <SafeAreaView>
@@ -122,7 +125,7 @@ const Home = () => {
         >
           <HStack>
             <Heading
-              className="whitespace-nowrap tracking-tight text-3xl font-bold text-gray-100"
+              className="whitespace-nowrap tracking-tight text-3xl font-bold text-white mr-2"
               size="3xl"
             >
               Minha Biblioteca
@@ -131,19 +134,20 @@ const Home = () => {
           <HStack>
             <Button
               onPress={handleLogout}
-              className="rounded-full data-[active=true]:bg-gray-500/80 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-gray-800/50 backdrop-blur-sm border border-white"
+              className="rounded-lg data-[active=true]:bg-red-600 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-transparent backdrop-blur-sm border border-gray-100/70"
             >
-              <ButtonIcon as={LogOut} className="text-white" size="xl" />
+              <ButtonIcon as={LogOut} className="text-gray-100/90" size="xl" />
             </Button>
           </HStack>
         </Box>
-        <VStack className="w-full justify-center flex-row items-center flex-col mb-6">
+        <HStack className="w-full  justify-center items-center mb-6">
           <Input
             size="lg"
-            className="p-1 h-12 flex w-11/12 rounded-md border text-sm placeholder:text-muted-foreground bg-gray-700 border-blue-500 text-gray-100"
+            style={{ width: "75%" }}
+            className="p-1 h-12 flex rounded-md border text-sm placeholder:text-muted-foreground bg-gray-700 border-blue-500 text-gray-100"
           >
             <InputSlot>
-              <InputIcon className="ml-2" as={SearchIcon} />
+              <InputIcon className="ml-2 text-gray-100/70" as={SearchIcon} />
             </InputSlot>
             <InputField
               size="lg"
@@ -151,16 +155,27 @@ const Home = () => {
               cursorColor={"#3b82f6"}
               placeholder="Pesquisar por título ou autor"
               placeholderTextColor={"#4b5563"}
+              onChangeText={handleSearch}
             />
           </Input>
-        </VStack>
+          <Button
+            size="lg"
+            className="ml-3 p-1 w-16 h-12 flex items-center justify-center rounded-lg border border-blue-500/70 text-sm bg-transparent data-[active=true]:bg-blue-500/10 data-[active=true]:border-gray-100"
+            onPress={() => setCreateModalVisible(true)}
+          >
+            <ButtonIcon
+              as={AddIcon}
+              className="text-blue-500 data-[active=true]:text-gray-100"
+            />
+          </Button>
+        </HStack>
         <VStack className="w-full flex-col items-center mb-6">
           {error && <Text className="text-red-500 mb-3">{error}</Text>}
           <ScrollView
             style={{ height: "80%", width: "100%" }}
             contentContainerStyle={{
               alignItems: "center",
-              paddingBottom: 100,
+              paddingBottom: 15,
               paddingTop: 10,
             }}
             refreshControl={
@@ -181,7 +196,7 @@ const Home = () => {
                       <Book color="#3b82f6" size={50} />
                       <CardMenu
                         onEdit={() => handleEdit(book)}
-                        onDelete={() => console.log("Delete", book.id)}
+                        onDelete={() => handleDelete(book)}
                       />
                     </HStack>
                     <Text className="text-xl font-semibold text-gray-100 mb-2">
@@ -195,10 +210,10 @@ const Home = () => {
                         {book.genero} - {book.anoPublicacao}
                       </Text>
                       <Badge
-                        className={`text-center px-4 whitespace-nowrap rounded-full border-none drop-shadow-lg h-9 font-semibold ${
+                        className={`text-center border px-4 whitespace-nowrap rounded-full border-none drop-shadow-lg h-9 font-semibold ${
                           book.statusLeitura === "LIDO"
-                            ? "bg-green-600"
-                            : "bg-red-600"
+                            ? "bg-blue-500 border-gray-100/70"
+                            : "bg-blue-500/10 border-blue-500/70"
                         } text-white`}
                       >
                         <Text className="text-gray-100 text-sm text-center">
@@ -226,27 +241,31 @@ const Home = () => {
             }}
           />
         </VStack>
-        <Fab
-          size="lg"
-          className="active:bg-blue-600/80 text-card-foreground shadow-sm overflow-hidden hover:shadow-lg bg-blue-600 backdrop-blur-sm border-none"
-          placement="bottom right"
-          onPress={() => setCreateModalVisible(true)}
-        >
-          <FabIcon as={AddIcon} className="text-gray-100" />
-          <FabLabel className="text-gray-100">Novo Livro</FabLabel>
-        </Fab>
 
         <EditBookModal
-          onSave={handleSaveEdit}
           isOpen={!!selectedBook}
           onClose={handleCloseModal}
           book={selectedBook}
+          onSave={() => {
+            fetchBooks(searchQuery);
+            setSelectedBook(null);
+          }}
         />
 
         <CreateBookModal
-          onSave={handleCreateBook}
           isOpen={isCreateModalVisible}
           onClose={() => setCreateModalVisible(false)}
+          onSave={() => {
+            fetchBooks(searchQuery);
+            setCreateModalVisible(false);
+          }}
+        />
+
+        <ConfirmationModal
+          isOpen={!!bookToDelete}
+          onClose={() => setBookToDelete(null)}
+          onConfirm={confirmDelete}
+          loading={deleteLoading}
         />
       </LinearGradient>
     </SafeAreaView>

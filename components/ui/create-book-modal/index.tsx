@@ -24,6 +24,7 @@ import { useForm, Controller, FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ActivityIndicator } from "react-native";
+import axiosInstance from "@/app/utils/axios-instance";
 
 const createBookSchema = z.object({
   titulo: z.string().min(1, "O título é obrigatório"),
@@ -46,7 +47,7 @@ const CreateBookModal = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (book: FieldValues) => void;
+  onSave: () => void;
 }) => {
   const [loading, setLoading] = useState(false);
   const {
@@ -73,9 +74,9 @@ const CreateBookModal = ({
         ...data,
         anoPublicacao: parseInt(data.anoPublicacao, 10),
       };
-      await onSave(newBook);
+      await axiosInstance.post("/livros", newBook);
+      onSave();
       reset();
-      onClose();
     } catch (error) {
       console.error("Error creating book:", error);
     } finally {
@@ -180,8 +181,11 @@ const CreateBookModal = ({
                   >
                     <InputField
                       type="text"
-                      value={value}
-                      onChangeText={(text) => onChange(parseInt(text, 10))}
+                      value={value.toString()}
+                      onChangeText={(text) => {
+                        const numericValue = text.replace(/[^0-9]/g, "");
+                        onChange(numericValue ? parseInt(numericValue, 10) : 0);
+                      }}
                       onBlur={onBlur}
                       cursorColor={"#3b82f6"}
                       placeholderTextColor={"#4b5563"}

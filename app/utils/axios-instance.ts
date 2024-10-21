@@ -1,13 +1,15 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
-const axiosInstance = axios.create({
-  baseURL: "http://192.168.1.23:3000",
-});
+const axiosInstance = axios.create({ timeout: 5000 });
 
 axiosInstance.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("access_token");
+    const customHost = await AsyncStorage.getItem("host");
+    const host = customHost || process.env.EXPO_PUBLIC_API_URL;
+    config.baseURL = host;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,14 +28,7 @@ axiosInstance.interceptors.request.use(
 );
 
 axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log("Response:", {
-      url: response.config.url,
-      status: response.status,
-      data: response.data,
-    });
-    return response;
-  },
+  (response) => response,
   async (error) => {
     if (error.response) {
       console.error("Response Error:", {
@@ -44,6 +39,13 @@ axiosInstance.interceptors.response.use(
     } else {
       console.error("Network Error:", error.message);
     }
+
+    if (error.response && error.response.status === 401) {
+      await AsyncStorage.removeItem("access_token");
+      router.push("/login");
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );

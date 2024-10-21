@@ -8,11 +8,15 @@ import { LinearGradient } from "@/components/ui/linear-gradient";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonIcon } from "@/components/ui/button";
 import { TextInput, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/app/context/auth";
 import { z } from "zod";
+import { Settings } from "lucide-react-native";
+import AppConfigModal, {
+  useAppConfigModal,
+} from "@/components/ui/app-config-modal"; // Import the hook
 
 const loginSchema = z.object({
   email: z
@@ -27,6 +31,7 @@ const loginSchema = z.object({
 const Login = () => {
   const { login, error } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { isVisible, openModal, closeModal } = useAppConfigModal();
   const {
     control,
     handleSubmit,
@@ -141,16 +146,19 @@ const Login = () => {
             <Text
               bold
               className="text-blue-400 hover:text-blue-300"
-              onPress={() =>
-                router.push({
-                  pathname: "./register",
-                })
-              }
+              onPress={() => router.push("/register")}
             >
               Cadastre-se aqui
             </Text>
           </HStack>
         </Card>
+        <AppConfigModal isOpen={isVisible} onClose={closeModal} />
+        <Button
+          className="absolute top-11 right-1 bg-transparent data-[active=true]:bg-transparent"
+          onPress={openModal}
+        >
+          <ButtonIcon as={Settings} className="text-white" />
+        </Button>
       </LinearGradient>
     </SafeAreaView>
   );

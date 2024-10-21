@@ -58,6 +58,7 @@
     "@unitools/router-expo": "^0.0.1",
     "axios": "^1.7.7",
     "expo": "~51.0.6",
+    "expo-build-properties": "~0.12.5",
     "expo-font": "~12.0.5",
     "expo-image": "~1.12.9",
     "expo-linear-gradient": "~13.0.2",

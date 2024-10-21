@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import { router } from "expo-router";
+import axiosInstance from "../utils/axios-instance";
+import { isAxiosError } from "axios";
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -24,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await retryRequest(() => axios.get("/me"));
+        await retryRequest(() => axiosInstance.get("/me"));
         setIsLoggedIn(true);
         router.replace("./home");
       } catch (error) {
@@ -60,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setError(null);
       const response = await retryRequest(() =>
-        axios.post("http://192.168.1.23:3000/auth/login", {
+        axiosInstance.post("/auth/login", {
           email,
           senha: password,
         })
@@ -69,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoggedIn(true);
       setError(null);
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response) {
+      if (isAxiosError(err) && err.response) {
         setError(
           err.response.data.message || "O login falhou. Tente novamente."
         );

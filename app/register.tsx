@@ -11,10 +11,11 @@ import { HStack } from "@/components/ui/hstack";
 import { Button } from "@/components/ui/button";
 import { TextInput, ActivityIndicator, StatusBar } from "react-native";
 import { router } from "expo-router";
-import axios from "axios";
 import { z } from "zod";
 import { ToastDescription, Toast, useToast } from "@/components/ui/toast";
 import { CheckCircleIcon } from "lucide-react-native";
+import axiosInstance from "./utils/axios-instance";
+import { isAxiosError } from "axios";
 
 const registerSchema = z
   .object({
@@ -53,7 +54,7 @@ const Register = () => {
     setError(null);
 
     try {
-      await axios.post("http://192.168.1.23:3000/usuarios", {
+      await axiosInstance.post("/usuarios", {
         nome: data.nome,
         email: data.email,
         senha: data.senha,
@@ -61,7 +62,7 @@ const Register = () => {
       showSuccessToast();
       router.push("./login");
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
+      if (isAxiosError(error) && error.response) {
         const messages = error.response.data.message;
         setError(
           messages.join(", ") || "Registro falhou. Por favor, tente novamente."
@@ -82,7 +83,7 @@ const Register = () => {
       containerStyle: {
         width: "100%",
       },
-      duration: 4000,
+      duration: 2500,
       render: ({ id }) => {
         const uniqueToastId = "toast-" + id;
         return (
@@ -123,7 +124,7 @@ const Register = () => {
               className="whitespace-nowrap tracking-tight text-3xl font-bold text-center text-gray-100"
               size="3xl"
             >
-              Crie uma Conta
+              Crie uma conta
             </Heading>
             <Text className="text-sm text-center text-gray-400">
               Comece hoje sua nova biblioteca pessoal
