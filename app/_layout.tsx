@@ -6,6 +6,9 @@ import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "../global.css";
 import { AuthProvider, useAuth } from "@/app/context/auth";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
+import { LogBox } from "react-native";
+
+LogBox.ignoreAllLogs();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({

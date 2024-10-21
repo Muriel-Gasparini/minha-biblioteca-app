@@ -24,8 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        await axios.get("/me");
+        await retryRequest(() => axios.get("/me"));
         setIsLoggedIn(true);
         router.replace("./home");
       } catch (error) {
@@ -47,12 +46,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     checkToken();
   }, [isLoggedIn]);
 
+  const retryRequest = async (requestFn: () => Promise<any>, retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        return await requestFn();
+      } catch (error) {
+        if (attempt === retries - 1) throw error;
+      }
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post("http://192.168.1.23:3000/auth/login", {
-        email,
-        senha: password,
-      });
+      setError(null);
+      const response = await retryRequest(() =>
+        axios.post("http://192.168.1.23:3000/auth/login", {
+          email,
+          senha: password,
+        })
+      );
       await AsyncStorage.setItem("access_token", response.data.access_token);
       setIsLoggedIn(true);
       setError(null);
