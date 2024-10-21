@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MinhaBiblioteca",
+    "name": "Minha Biblioteca",
     "slug": "MinhaBiblioteca",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#93c5fd"
       },
       "package": "com.minha.biblioteca",
       "softwareKeyboardLayoutMode": "pan"

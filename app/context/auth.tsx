@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import axiosInstance from "../utils/axios-instance";
 import { isAxiosError } from "axios";
+import { AppState, AppStateStatus } from "react-native";
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -84,6 +85,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await AsyncStorage.removeItem("access_token");
     setIsLoggedIn(false);
   };
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await axiosInstance.get("/auth/status");
+      setIsLoggedIn(response.data.isAuthenticated);
+    } catch (error) {
+      console.error("Failed to check auth status", error);
+      setIsLoggedIn(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        checkAuthStatus();
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
