@@ -21,13 +21,13 @@ Antes de começar, certifique-se de que você atendeu aos seguintes requisitos:
 1. **Clone o Repositório**: Clone este repositório para sua máquina local usando:
 
    ```bash
-   git clone https://github.com/seu-usuario/seu-repo-nome.git
+   git clone https://github.com/Muriel-Gasparini/minha-biblioteca-app
    ```
 
 2. **Navegue até o Diretório do Projeto**: Mude para o diretório do projeto:
 
    ```bash
-   cd seu-repo-nome
+   cd minha-biblioteca-app
    ```
 
 3. **Instale as Dependências**: Instale todas as dependências do projeto usando Yarn:
@@ -43,12 +43,6 @@ Antes de começar, certifique-se de que você atendeu aos seguintes requisitos:
    ```
 
 5. **Execute o Projeto**: Inicie o projeto no Expo:
-
    ```bash
-   yarn start
-   ```
-
-6. **Rodar no Android**: Para rodar no Android, use:
-   ```bash
-   yarn android
+   yarn start ou yarn android
    ```
